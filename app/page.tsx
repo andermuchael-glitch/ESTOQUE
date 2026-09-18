@@ -78,7 +78,12 @@ export default function Home() {
   } = useOfflineStorage<Move[]>("estoque-moves", []);
 
   const { pendingCount, syncing, lastSync, syncNow } = useOfflineSync();
-\n  useEffect(() => {\n    if (!itemsReady) return;\n    setItems(current => current.map(item => ({ ...item, code: item.code || "" })));\n  }, [itemsReady]);\n
+
+  useEffect(() => {
+    if (!itemsReady) return;
+    setItems(current => current.map(item => ({ ...item, code: item.code || "" })));
+  }, [itemsReady]);
+
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<"all" | "low">("all");
   const [showHistory, setShowHistory] = useState(false);
@@ -855,7 +860,7 @@ export default function Home() {
               {items.map(item => (
                 <div className="report-row" key={item.id}>
                   <span>{item.name}</span>
-                  <b>{item.qty} / {item.min} rolos</b>
+                  <b>{item.qty} / {item.min} unidades</b>
                   <small className={item.qty < item.min ? "danger" : "good"}>
                     {item.qty < item.min
                       ? "Abaixo do mínimo"
