@@ -1,7 +1,8 @@
 "use client";
 
 import {useEffect,useMemo,useState} from "react";
-import {PackagePlus,Minus,Plus,Search,History,AlertTriangle,Boxes,Settings,Home as HomeIcon,Package,ArrowLeftRight,BarChart3,Menu,X,CalendarDays,Moon,Sun} from "lucide-react";
+import {PackagePlus,Minus,Plus,Search,History,AlertTriangle,Boxes,Settings,Home as HomeIcon,Package,ArrowLeftRight,BarChart3,Menu,X,CalendarDays,Moon,Sun,FileText} from "lucide-react";
+import {jsPDF} from "jspdf";
 
 const INITIAL=["NEOLATEX 3MM","NEOLATEX 2MM BOLSO DE CARTEIRA","MATERIAL DE MOUSE PAD","MOUSE PAD ERGONÔMICO QUADRADO","MOUSE PAD ERGONÔMICO GOTA","APOIO DE TECLADO","CAPA DE MALA","FORRO PRETO IMPERMEÁVEL","MATERIAL MOCHILA IMPERMEÁVEL","MATERIAL ESTEIRA","FORRO MARMITA","FORRO DE COOLER","MATERIAL CANGA","FORRO WINE BAG"];
 
@@ -87,6 +88,41 @@ export default function Home(){
    if(it)setMoves(m=>[{id:Date.now(),name:it.name,delta,date:new Date().toLocaleString("pt-BR")},...m].slice(0,100));
  }
  function setMin(id:number,value:number){setItems(xs=>xs.map(x=>x.id===id?{...x,min:Math.max(0,value)}:x))}
+ function sendPdfReport(){
+   const doc=new jsPDF();
+   const margin=14;
+   let y=18;
+   doc.setFontSize(20); doc.text("RELATORIO DE ESTOQUE",margin,y); y+=8;
+   doc.setFontSize(10); doc.text(new Date().toLocaleString("pt-BR"),margin,y); y+=10;
+   doc.setFontSize(12); doc.text(`Materiais: ${items.length}   |   Total de rolos: ${total}   |   Abaixo do minimo: ${lowItems.length}   |   Materiais OK: ${okCount}`,margin,y); y+=10;
+   doc.setFontSize(11);
+   items.forEach((it,i)=>{
+     if(y>278){doc.addPage();y=18;}
+     const status=it.qty<it.min?"ABAIXO DO MINIMO":it.qty===it.min?"NO LIMITE":"OK";
+     doc.text(`${i+1}. ${it.name}`,margin,y); y+=6;
+     doc.setFontSize(10);
+     doc.text(`Estoque: ${it.qty} rolo(s) | Minimo: ${it.min} | Status: ${status}`,margin+4,y); y+=7;
+     doc.setFontSize(11);
+   });
+   if(moves.length){
+     if(y>260){doc.addPage();y=18;}
+     y+=3; doc.setFontSize(13); doc.text("ULTIMAS MOVIMENTACOES",margin,y); y+=8; doc.setFontSize(10);
+     moves.slice(0,20).forEach(m=>{
+       if(y>278){doc.addPage();y=18;}
+       doc.text(`${m.date} - ${m.name}: ${m.delta>0?"+":""}${m.delta} rolo(s)`,margin,y); y+=6;
+     });
+   }
+   const fileName=`relatorio-estoque-${new Date().toISOString().slice(0,10)}.pdf`;
+   const blob=doc.output("blob");
+   const file=new File([blob],fileName,{type:"application/pdf"});
+   if(navigator.share&&navigator.canShare&&navigator.canShare({files:[file]})){
+     navigator.share({title:"Relatório de estoque",text:"Relatório do estoque de materiais.",files:[file]}).catch(()=>{});
+   }else{
+     const url=URL.createObjectURL(blob);
+     const a=document.createElement("a"); a.href=url; a.download=fileName; a.click(); URL.revokeObjectURL(url);
+     alert("PDF gerado. O arquivo foi baixado porque este aparelho não oferece compartilhamento direto.");
+   }
+ }
  function createBackup(){
    const backup={version:1,app:"ESTOQUE",createdAt:new Date().toISOString(),items,moves};
    const blob=new Blob([JSON.stringify(backup,null,2)],{type:"application/json"});
