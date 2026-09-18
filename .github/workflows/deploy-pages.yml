@@ -24,15 +24,22 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: 20
+          cache: npm
+
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v5
 
       - name: Install dependencies
         run: npm install
 
       - name: Build static site
         run: npm run build
-        env:
-          NEXT_PUBLIC_BASE_PATH: /ESTOQUE
+
+      - name: Verify static export
+        run: |
+          test -f out/index.html
+          echo "Static export OK: out/index.html exists"
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
