@@ -1,0 +1,1 @@
+import "./globals.css"; export const metadata={title:"Estoque de Materiais",description:"Controle de estoque de materiais em rolos"}; export default function RootLayout({children}:{children:React.ReactNode}){return <html lang="pt-BR"><body>{children}</body></html>}
