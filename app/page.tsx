@@ -175,7 +175,7 @@ export default function Home(){
        <button onClick={()=>{setShowSettings(true);setShowReports(false);setShowHistory(false);setMenuOpen(false)}}><Settings/>Configurações</button>
      </nav>
      <div className="sidebar-tip"><Boxes/><b>Organização hoje,<br/>produção amanhã!</b></div>
-     <div className="sidebar-footer">ESTOQUE v1.0<br/><span>Controle de materiais</span></div>
+     <div className="sidebar-footer">ESTOQUE v1.1<br/><span>Controle de materiais</span></div>
    </aside>
 
    <main className="content">
