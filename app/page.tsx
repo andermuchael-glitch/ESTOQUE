@@ -20,6 +20,7 @@ export default function Home(){
  const [moves,setMoves]=useState<Move[]>([]);
  const [search,setSearch]=useState("");
  const [showHistory,setShowHistory]=useState(false);
+ const [showReports,setShowReports]=useState(false);
  const [showSettings,setShowSettings]=useState(false);
  const [menuOpen,setMenuOpen]=useState(false);
 
@@ -169,9 +170,9 @@ export default function Home(){
      <nav>
        <button className="nav-active" onClick={()=>setMenuOpen(false)}><HomeIcon/>Início</button>
        <button onClick={()=>setMenuOpen(false)}><Package/>Materiais</button>
-       <button onClick={()=>{setShowHistory(true);setMenuOpen(false)}}><ArrowLeftRight/>Movimentações</button>
-       <button onClick={()=>setMenuOpen(false)}><BarChart3/>Relatórios</button>
-       <button onClick={()=>{setShowSettings(true);setMenuOpen(false)}}><Settings/>Configurações</button>
+       <button onClick={()=>{setShowHistory(true);setShowReports(false);setShowSettings(false);setMenuOpen(false)}}><ArrowLeftRight/>Movimentações</button>
+       <button onClick={()=>{setShowReports(true);setShowHistory(false);setShowSettings(false);setMenuOpen(false)}}><BarChart3/>Relatórios</button>
+       <button onClick={()=>{setShowSettings(true);setShowReports(false);setShowHistory(false);setMenuOpen(false)}}><Settings/>Configurações</button>
      </nav>
      <div className="sidebar-tip"><Boxes/><b>Organização hoje,<br/>produção amanhã!</b></div>
      <div className="sidebar-footer">ESTOQUE v1.0<br/><span>Controle de materiais</span></div>
@@ -197,6 +198,12 @@ export default function Home(){
 
      {showSettings&&<section className="panel settings"><div className="panel-head"><div><h2>Configurações e backup</h2><p>Defina os mínimos e proteja seus dados antes de trocar de aparelho.</p></div><button onClick={()=>setShowSettings(false)}>Fechar</button></div>
        <div className="backup-box"><div><b>Backup dos dados</b><span>Salve materiais, quantidades, mínimos e movimentações em um arquivo.</span></div><div className="backup-actions"><button className="backup-btn" onClick={createBackup}>⬇ Baixar backup</button><label className="restore-btn">↥ Restaurar backup<input type="file" accept=".json,application/json" onChange={e=>{const file=e.target.files?.[0];if(file)restoreBackup(file);e.currentTarget.value=""}}/></label></div></div>{filtered.map(it=><div className="setting" key={it.id}><span>{it.name}</span><label><input type="number" min="0" value={it.min} onChange={e=>setMin(it.id,Number(e.target.value))}/> rolos</label></div>)}</section>}
+
+     {showReports&&<section className="panel report-panel"><div className="panel-head"><div><h2>Relatórios de estoque</h2><p>Resumo atual do estoque, mínimos configurados e movimentações recentes.</p></div><button onClick={()=>setShowReports(false)}>Fechar</button></div>
+       <div className="report-summary"><div><span>Materiais cadastrados</span><b>{items.length}</b></div><div><span>Total de rolos</span><b>{total}</b></div><div><span>Abaixo do mínimo</span><b className={lowItems.length?"danger":"good"}>{lowItems.length}</b></div><div><span>Materiais OK</span><b className="good">{okCount}</b></div></div>
+       <div className="report-actions"><button className="report" onClick={sendPdfReport}><FileText size={18}/> Gerar relatório PDF</button></div>
+       <div className="report-list">{items.map(it=><div className="report-row" key={it.id}><span>{it.name}</span><b>{it.qty} / {it.min} rolos</b><small className={it.qty<it.min?"danger":"good"}>{it.qty<it.min?"Abaixo do mínimo":it.qty===it.min?"No limite":"OK"}</small></div>)}</div>
+     </section>}
 
      {showHistory&&<section className="panel"><div className="panel-head"><div><h2>Últimas movimentações</h2><p>Histórico recente de entradas e saídas.</p></div><button onClick={()=>setShowHistory(false)}>Fechar</button></div>{moves.length===0?<p>Nenhuma movimentação ainda.</p>:moves.slice(0,20).map(m=><div className="move" key={m.id}><span>{m.name}</span><b className={m.delta>0?"in":"out"}>{m.delta>0?"+":""}{m.delta} rolo{Math.abs(m.delta)!==1?"s":""}</b><small>{m.date}</small></div>)}</section>}
 
