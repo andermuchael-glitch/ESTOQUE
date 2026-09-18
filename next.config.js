@@ -1,4 +1,6 @@
-/** @type {import('next').NextConfig} */
+const withSerwistInit = require("@serwist/next").default;
+
+/** @type {import("next").NextConfig} */
 const nextConfig = {
   output: "export",
   trailingSlash: true,
@@ -7,4 +9,21 @@ const nextConfig = {
   images: { unoptimized: true },
 };
 
-module.exports = nextConfig;
+const withSerwist = withSerwistInit({
+  disable: process.env.NODE_ENV === "development",
+  swSrc: "app/sw.ts",
+  swDest: "public/sw.js",
+  swUrl: "/sw.js",
+  scope: "/ESTOQUE/",
+  register: false,
+  cacheOnNavigation: true,
+  reloadOnOnline: false,
+  additionalPrecacheEntries: [
+    {
+      url: "/ESTOQUE/",
+      revision: process.env.GITHUB_SHA || "local-build",
+    },
+  ],
+});
+
+module.exports = withSerwist(nextConfig);
