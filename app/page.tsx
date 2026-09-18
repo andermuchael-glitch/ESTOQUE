@@ -31,22 +31,7 @@ import { useOfflineStorage } from "../hooks/useOfflineStorage";
 import { useOfflineSync } from "../hooks/useOfflineSync";
 import { queueSyncOperation } from "../lib/sync";
 
-const INITIAL = [
-  "NEOLATEX 3MM",
-  "NEOLATEX 2MM BOLSO DE CARTEIRA",
-  "MATERIAL DE MOUSE PAD",
-  "MOUSE PAD ERGONÔMICO QUADRADO",
-  "MOUSE PAD ERGONÔMICO GOTA",
-  "APOIO DE TECLADO",
-  "CAPA DE MALA",
-  "FORRO PRETO IMPERMEÁVEL",
-  "MATERIAL MOCHILA IMPERMEÁVEL",
-  "MATERIAL ESTEIRA",
-  "FORRO MARMITA",
-  "FORRO DE COOLER",
-  "MATERIAL CANGA",
-  "FORRO WINE BAG",
-];
+const INITIAL: string[] = [];
 
 type Item = {
   id: number;
@@ -663,7 +648,7 @@ export default function Home() {
           </div>
           <div className="stat green">
             <div className="stat-icon"><Package /></div>
-            <div><span>Total de rolos</span><b>{total}</b></div>
+            <div><span>Total de unidades</span><b>{total}</b></div>
           </div>
           <div className="stat red">
             <div className="stat-icon"><AlertTriangle /></div>
@@ -852,7 +837,7 @@ export default function Home() {
 
             <div className="report-summary">
               <div><span>Materiais cadastrados</span><b>{items.length}</b></div>
-              <div><span>Total de rolos</span><b>{total}</b></div>
+              <div><span>Total de unidades</span><b>{total}</b></div>
               <div>
                 <span>Abaixo do mínimo</span>
                 <b className={lowItems.length ? "danger" : "good"}>{lowItems.length}</b>
