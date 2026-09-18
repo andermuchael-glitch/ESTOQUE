@@ -9,6 +9,12 @@ type Item={id:number;name:string;qty:number;min:number};
 type Move={id:number;name:string;delta:number;date:string};
 
 export default function Home(){
+ const [authenticated,setAuthenticated]=useState(false);
+ const [authReady,setAuthReady]=useState(false);
+ const [email,setEmail]=useState("");
+ const [password,setPassword]=useState("");
+ const [authError,setAuthError]=useState("");
+ const [showRegister,setShowRegister]=useState(false);
  const [items,setItems]=useState<Item[]>([]);
  const [moves,setMoves]=useState<Move[]>([]);
  const [search,setSearch]=useState("");
@@ -16,6 +22,46 @@ export default function Home(){
  const [showSettings,setShowSettings]=useState(false);
  const [menuOpen,setMenuOpen]=useState(false);
 
+ useEffect(()=>{
+   setAuthenticated(localStorage.getItem("estoque-authenticated")==="true");
+   setAuthReady(true);
+ },[]);
+ async function hashPassword(value:string){
+   const data=new TextEncoder().encode(value);
+   const hash=await crypto.subtle.digest("SHA-256",data);
+   return Array.from(new Uint8Array(hash)).map(b=>b.toString(16).padStart(2,"0")).join("");
+ }
+ async function handleAuth(e:React.FormEvent){
+   e.preventDefault();
+   setAuthError("");
+   const clean=email.trim().toLowerCase();
+   if(!clean||!password){setAuthError("Informe e-mail e senha.");return;}
+   const stored=localStorage.getItem("estoque-user");
+   const hashed=await hashPassword(password);
+   if(showRegister){
+     if(password.length<6){setAuthError("A senha deve ter pelo menos 6 caracteres.");return;}
+     if(stored){setAuthError("Já existe um acesso neste aparelho. Entre com ele.");setShowRegister(false);return;}
+     localStorage.setItem("estoque-user",JSON.stringify({email:clean,password:hashed}));
+     localStorage.setItem("estoque-authenticated","true");
+     setAuthenticated(true);
+     setPassword("");
+     return;
+   }
+   if(!stored){setAuthError("Nenhum acesso cadastrado neste aparelho. Clique em Criar acesso.");return;}
+   try{
+     const user=JSON.parse(stored);
+     if(user.email===clean&&user.password===hashed){
+       localStorage.setItem("estoque-authenticated","true");
+       setAuthenticated(true);
+       setPassword("");
+     }else setAuthError("E-mail ou senha incorretos.");
+   }catch{setAuthError("Não foi possível validar o acesso.");}
+ }
+ function logout(){
+   localStorage.removeItem("estoque-authenticated");
+   setAuthenticated(false);
+   setPassword("");
+ }
  useEffect(()=>{
    try{
      const saved=JSON.parse(localStorage.getItem("estoque-items")||"[]");
@@ -78,6 +124,9 @@ export default function Home(){
    setMoves(m=>[{id:Date.now(),name:it.name,delta:qty-it.qty,date:new Date().toLocaleString("pt-BR")},...m].slice(0,100));
  }
 
+ if(!authReady)return null;
+ if(!authenticated)return <main className="login-page"><section className="login-card"><div className="login-logo"><Boxes size={30}/></div><h1>ESTOQUE</h1><p>Controle de materiais em rolos</p><form onSubmit={handleAuth}><label>E-mail<input type="email" autoComplete="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder="seu@email.com"/></label><label>Senha<input type="password" autoComplete={showRegister?"new-password":"current-password"} value={password} onChange={e=>setPassword(e.target.value)} placeholder={showRegister?"Mínimo 6 caracteres":"Sua senha"}/></label>{authError&&<div className="login-error">{authError}</div>}<button className="login-btn" type="submit">{showRegister?"Criar acesso":"Entrar"}</button></form><button className="login-switch" onClick={()=>{setShowRegister(!showRegister);setAuthError("");}}>{showRegister?"Já tenho acesso":"Primeiro acesso? Criar acesso"}</button><small>Seus dados permanecem neste aparelho. Use o backup para transferi-los.</small></section></main>;
+
  return <div className="app-shell">
    <aside className={menuOpen?"sidebar open":"sidebar"}>
      <div className="logo"><div className="logo-mark"><Boxes/></div><div><b>ESTOQUE</b><span>CONTROLE DE MATERIAIS</span></div></div>
@@ -96,7 +145,7 @@ export default function Home(){
      <header className="topbar">
        <button className="mobile-menu" onClick={()=>setMenuOpen(!menuOpen)}>{menuOpen?<X/>:<Menu/>}</button>
        <div><h1>Bem-vindo!</h1><p>Controle seu estoque de materiais em rolos de forma simples e eficiente.</p></div>
-       <div className="top-actions"><button className="theme"><Sun size={17}/><Moon size={18}/></button><div className="date"><CalendarDays size={20}/><span>{today}<small>Hoje</small></span></div></div>
+       <div className="top-actions"><button className="theme"><Sun size={17}/><Moon size={18}/></button><button className="logout" onClick={logout}>Sair</button><div className="date"><CalendarDays size={20}/><span>{today}<small>Hoje</small></span></div></div>
      </header>
 
      {lowItems.length>0&&<div className="alert"><AlertTriangle size={21}/><div><b>Alerta de estoque baixo</b><span>{lowItems.length} material(is) abaixo do estoque mínimo.</span></div><button onClick={()=>setShowSettings(true)}>Ver limites</button></div>}
