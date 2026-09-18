@@ -41,6 +41,33 @@ export default function Home(){
    if(it)setMoves(m=>[{id:Date.now(),name:it.name,delta,date:new Date().toLocaleString("pt-BR")},...m].slice(0,100));
  }
  function setMin(id:number,value:number){setItems(xs=>xs.map(x=>x.id===id?{...x,min:Math.max(0,value)}:x))}
+ function createBackup(){
+   const backup={version:1,app:"ESTOQUE",createdAt:new Date().toISOString(),items,moves};
+   const blob=new Blob([JSON.stringify(backup,null,2)],{type:"application/json"});
+   const url=URL.createObjectURL(blob);
+   const a=document.createElement("a");
+   a.href=url;
+   a.download=`estoque-backup-${new Date().toISOString().slice(0,10)}.json`;
+   a.click();
+   URL.revokeObjectURL(url);
+ }
+ function restoreBackup(file:File){
+   const reader=new FileReader();
+   reader.onload=()=>{
+     try{
+       const data=JSON.parse(String(reader.result));
+       if(!Array.isArray(data.items)||!Array.isArray(data.moves))throw new Error("Formato inválido");
+       const restored=data.items.filter((x:any)=>x&&Number.isFinite(Number(x.id))&&typeof x.name==="string").map((x:any)=>({id:Number(x.id),name:x.name,qty:Math.max(0,Number(x.qty)||0),min:Math.max(0,Number(x.min)||0)}));
+       if(!restored.length)throw new Error("Backup sem materiais");
+       setItems(restored);
+       setMoves(data.moves);
+       alert("Backup restaurado com sucesso.");
+     }catch{
+       alert("Não foi possível restaurar este arquivo. Selecione um backup do ESTOQUE.");
+     }
+   };
+   reader.readAsText(file);
+ }
  function adjust(id:number){
    const it=items.find(x=>x.id===id); if(!it)return;
    const value=window.prompt(`Quantidade atual para ${it.name}:`,String(it.qty));
@@ -83,7 +110,8 @@ export default function Home(){
 
      <div className="toolbar"><div className="search"><Search size={19}/><input placeholder="Buscar material..." value={search} onChange={e=>setSearch(e.target.value)}/></div><select aria-label="Filtro de materiais"><option>Todos os materiais</option><option>Abaixo do mínimo</option></select><button className="add" onClick={()=>setSearch("")}><Plus size={19}/> Adicionar material</button></div>
 
-     {showSettings&&<section className="panel settings"><div className="panel-head"><div><h2>Estoque mínimo por material</h2><p>Defina quantos rolos devem existir antes do alerta.</p></div><button onClick={()=>setShowSettings(false)}>Fechar</button></div>{filtered.map(it=><div className="setting" key={it.id}><span>{it.name}</span><label><input type="number" min="0" value={it.min} onChange={e=>setMin(it.id,Number(e.target.value))}/> rolos</label></div>)}</section>}
+     {showSettings&&<section className="panel settings"><div className="panel-head"><div><h2>Configurações e backup</h2><p>Defina os mínimos e proteja seus dados antes de trocar de aparelho.</p></div><button onClick={()=>setShowSettings(false)}>Fechar</button></div>
+       <div className="backup-box"><div><b>Backup dos dados</b><span>Salve materiais, quantidades, mínimos e movimentações em um arquivo.</span></div><div className="backup-actions"><button className="backup-btn" onClick={createBackup}>⬇ Baixar backup</button><label className="restore-btn">↥ Restaurar backup<input type="file" accept=".json,application/json" onChange={e=>{const file=e.target.files?.[0];if(file)restoreBackup(file);e.currentTarget.value=""}}/></label></div></div>{filtered.map(it=><div className="setting" key={it.id}><span>{it.name}</span><label><input type="number" min="0" value={it.min} onChange={e=>setMin(it.id,Number(e.target.value))}/> rolos</label></div>)}</section>}
 
      {showHistory&&<section className="panel"><div className="panel-head"><div><h2>Últimas movimentações</h2><p>Histórico recente de entradas e saídas.</p></div><button onClick={()=>setShowHistory(false)}>Fechar</button></div>{moves.length===0?<p>Nenhuma movimentação ainda.</p>:moves.slice(0,20).map(m=><div className="move" key={m.id}><span>{m.name}</span><b className={m.delta>0?"in":"out"}>{m.delta>0?"+":""}{m.delta} rolo{Math.abs(m.delta)!==1?"s":""}</b><small>{m.date}</small></div>)}</section>}
 
