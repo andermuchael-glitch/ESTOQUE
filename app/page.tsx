@@ -377,27 +377,77 @@ export default function Home() {
 
     const fileName = `relatorio-estoque-${new Date().toISOString().slice(0, 10)}.pdf`;
     const blob = doc.output("blob");
+    downloadPdfBlob(blob, fileName);
+  }
+
+  function downloadPdfBlob(blob: Blob, fileName: string) {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = fileName;
+    a.rel = "noopener";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
+
+  async function sharePdfReport() {
+    const doc = new jsPDF();
+    const margin = 14;
+    let y = 18;
+
+    doc.setFontSize(20);
+    doc.text("RELATORIO DE ESTOQUE", margin, y);
+    y += 8;
+    doc.setFontSize(10);
+    doc.text(new Date().toLocaleString("pt-BR"), margin, y);
+    y += 10;
+    doc.setFontSize(12);
+    doc.text(
+      `Materiais: ${items.length} | Total de unidades: ${total} | Abaixo do minimo: ${lowItems.length} | Materiais OK: ${okCount}`,
+      margin,
+      y
+    );
+    y += 10;
+
+    items.forEach((item, index) => {
+      if (y > 278) { doc.addPage(); y = 18; }
+      const status = item.qty < item.min ? "ABAIXO DO MINIMO" : item.qty === item.min ? "NO LIMITE" : "OK";
+      doc.setFontSize(11);
+      doc.text(`${index + 1}. ${item.name}`, margin, y);
+      y += 6;
+      doc.setFontSize(10);
+      doc.text(`Estoque: ${item.qty} unidade(s) | Minimo: ${item.min} unidade(s) | Status: ${status}`, margin + 4, y);
+      y += 7;
+    });
+
+    if (moves.length) {
+      if (y > 260) { doc.addPage(); y = 18; }
+      y += 3;
+      doc.setFontSize(13);
+      doc.text("ULTIMAS MOVIMENTACOES", margin, y);
+      y += 8;
+      doc.setFontSize(10);
+      moves.slice(0, 20).forEach(movement => {
+        if (y > 278) { doc.addPage(); y = 18; }
+        doc.text(`${movement.date} - ${movement.name}: ${movement.delta > 0 ? "+" : ""}${movement.delta} unidade(s)`, margin, y);
+        y += 6;
+      });
+    }
+
+    const fileName = `relatorio-estoque-${new Date().toISOString().slice(0, 10)}.pdf`;
+    const blob = doc.output("blob");
     const file = new File([blob], fileName, { type: "application/pdf" });
 
-    if (
-      navigator.share &&
-      navigator.canShare &&
-      navigator.canShare({ files: [file] })
-    ) {
-      navigator
-        .share({
-          title: "Relatório de estoque",
-          text: "Relatório do estoque de materiais.",
-          files: [file],
-        })
-        .catch(() => {});
+    if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+      await navigator.share({
+        title: "Relatório de estoque",
+        text: "Relatório do estoque de materiais.",
+        files: [file],
+      }).catch(() => {});
     } else {
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = fileName;
-      a.click();
-      URL.revokeObjectURL(url);
+      downloadPdfBlob(blob, fileName);
     }
   }
 
@@ -851,9 +901,14 @@ export default function Home() {
             </div>
 
             <div className="report-actions">
-              <button className="report" onClick={sendPdfReport}>
-                <FileText size={18} /> Gerar relatório PDF
-              </button>
+              <div className="report-actions-buttons">
+                <button className="report" onClick={sendPdfReport}>
+                  <FileText size={18} /> Baixar PDF
+                </button>
+                <button className="report secondary-report" onClick={sharePdfReport}>
+                  Compartilhar PDF
+                </button>
+              </div>
             </div>
 
             <div className="report-list">
