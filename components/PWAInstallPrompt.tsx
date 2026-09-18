@@ -11,7 +11,8 @@ type BeforeInstallPromptEvent = Event & {
 export default function PWAInstallPrompt() {
   const [installEvent, setInstallEvent] = useState<BeforeInstallPromptEvent | null>(null);
   const [visible, setVisible] = useState(false);
-  const [ios, setIos] = useState(false);\n  const [dismissed, setDismissed] = useState(false);
+  const [ios, setIos] = useState(false);
+  const [dismissed, setDismissed] = useState(false);
 
   useEffect(() => {
     const onBeforeInstall = (event: Event) => {
