@@ -305,78 +305,201 @@ export default function Home() {
     setShowAddMaterial(true);
   }
 
-  function sendPdfReport() {
+  function buildPdfReport() {
     const doc = new jsPDF();
     const margin = 14;
-    let y = 18;
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.getHeight();
+    const now = new Date();
+    const dateLabel = now.toLocaleString("pt-BR");
+    const fileName = `relatorio-estoque-${now.toISOString().slice(0, 10)}.pdf`;
 
-    doc.setFontSize(20);
-    doc.text("RELATORIO DE ESTOQUE", margin, y);
-    y += 8;
+    const addFooter = () => {
+      const pages = doc.getNumberOfPages();
+      for (let page = 1; page <= pages; page += 1) {
+        doc.setPage(page);
+        doc.setDrawColor(225, 230, 238);
+        doc.line(margin, pageHeight - 13, pageWidth - margin, pageHeight - 13);
+        doc.setTextColor(115, 125, 140);
+        doc.setFontSize(8);
+        doc.text("ESTOQUE • Relatorio de materiais", margin, pageHeight - 7);
+        doc.text(`Pagina ${page} de ${pages}`, pageWidth - margin, pageHeight - 7, { align: "right" });
+      }
+    };
 
-    doc.setFontSize(10);
-    doc.text(new Date().toLocaleString("pt-BR"), margin, y);
-    y += 10;
+    // Cabecalho
+    doc.setFillColor(9, 28, 58);
+    doc.roundedRect(0, 0, pageWidth, 42, 0, 0, "F");
+    doc.setFillColor(22, 131, 255);
+    doc.roundedRect(margin, 9, 24, 24, 6, 6, "F");
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(15);
+    doc.setFont("helvetica", "bold");
+    doc.text("E", margin + 8.2, 25);
+    doc.setFontSize(19);
+    doc.text("RELATORIO DE ESTOQUE", margin + 32, 18);
+    doc.setFontSize(9);
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(190, 207, 230);
+    doc.text("Visao geral dos materiais e situacao atual do estoque", margin + 32, 27);
+    doc.text(dateLabel, pageWidth - margin, 18, { align: "right" });
+    doc.text("Controle de materiais", pageWidth - margin, 27, { align: "right" });
 
+    let y = 55;
+
+    // Indicadores
+    const cards = [
+      ["MATERIAIS", String(items.length), [22, 131, 255]],
+      ["UNIDADES", String(total), [24, 190, 140]],
+      ["ATENCAO", String(lowItems.length), [238, 82, 91]],
+      ["OK", String(okCount), [150, 91, 240]],
+    ];
+    const gap = 5;
+    const cardWidth = (pageWidth - margin * 2 - gap * 3) / 4;
+
+    cards.forEach(([label, value, rgb], index) => {
+      const x = margin + index * (cardWidth + gap);
+      doc.setFillColor(247, 249, 252);
+      doc.setDrawColor(225, 230, 238);
+      doc.roundedRect(x, y, cardWidth, 25, 4, 4, "FD");
+      doc.setFillColor(Number(rgb[0]), Number(rgb[1]), Number(rgb[2]));
+      doc.roundedRect(x, y, 3, 25, 2, 2, "F");
+      doc.setTextColor(105, 116, 132);
+      doc.setFontSize(7);
+      doc.setFont("helvetica", "bold");
+      doc.text(String(label), x + 9, y + 8);
+      doc.setTextColor(25, 34, 48);
+      doc.setFontSize(16);
+      doc.text(String(value), x + 9, y + 19);
+    });
+
+    y += 36;
+    doc.setTextColor(35, 45, 60);
     doc.setFontSize(12);
+    doc.setFont("helvetica", "bold");
+    doc.text("SITUACAO DOS MATERIAIS", margin, y);
+    y += 6;
+    doc.setTextColor(110, 120, 135);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(8.5);
     doc.text(
-      `Materiais: ${items.length} | Total de unidades: ${total} | Abaixo do minimo: ${lowItems.length} | Materiais OK: ${okCount}`,
+      lowItems.length
+        ? `${lowItems.length} material(is) precisam de atencao por estarem abaixo do minimo.`
+        : "Todos os materiais estao acima ou no minimo configurado.",
       margin,
       y
     );
-    y += 10;
+    y += 9;
+
+    const col = {
+      material: margin,
+      estoque: pageWidth - 73,
+      minimo: pageWidth - 47,
+      status: pageWidth - 24,
+    };
+
+    const drawTableHeader = () => {
+      doc.setFillColor(235, 240, 247);
+      doc.roundedRect(margin, y, pageWidth - margin * 2, 10, 2, 2, "F");
+      doc.setTextColor(76, 88, 105);
+      doc.setFontSize(7.5);
+      doc.setFont("helvetica", "bold");
+      doc.text("MATERIAL", col.material + 4, y + 6.5);
+      doc.text("ESTOQUE", col.estoque, y + 6.5, { align: "right" });
+      doc.text("MINIMO", col.minimo, y + 6.5, { align: "right" });
+      doc.text("STATUS", col.status, y + 6.5, { align: "right" });
+      y += 14;
+    };
+
+    drawTableHeader();
 
     items.forEach((item, index) => {
-      if (y > 278) {
+      if (y > pageHeight - 28) {
         doc.addPage();
         y = 18;
+        drawTableHeader();
       }
-      const status =
-        item.qty < item.min
-          ? "ABAIXO DO MINIMO"
-          : item.qty === item.min
-            ? "NO LIMITE"
-            : "OK";
 
-      doc.setFontSize(11);
-      doc.text(`${index + 1}. ${item.name}`, margin, y);
-      y += 6;
-      doc.setFontSize(10);
-      doc.text(
-        `Estoque: ${item.qty} unidade(s) | Minimo: ${item.min} unidade(s) | Status: ${status}`,
-        margin + 4,
-        y
-      );
-      y += 7;
+      const isLow = item.qty < item.min;
+      const isLimit = item.qty === item.min;
+      const status = isLow ? "ATENCAO" : isLimit ? "NO LIMITE" : "OK";
+      const statusColor = isLow ? [220, 63, 72] : isLimit ? [211, 139, 35] : [24, 170, 116];
+
+      if (index % 2 === 0) {
+        doc.setFillColor(250, 251, 253);
+        doc.rect(margin, y - 4, pageWidth - margin * 2, 10, "F");
+      }
+
+      doc.setTextColor(35, 45, 60);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(8.5);
+      const name = item.name.length > 58 ? `${item.name.slice(0, 55)}...` : item.name;
+      doc.text(name, col.material + 4, y + 2);
+      doc.setFont("helvetica", "normal");
+      doc.setTextColor(70, 82, 100);
+      doc.text(String(item.qty), col.estoque, y + 2, { align: "right" });
+      doc.text(String(item.min), col.minimo, y + 2, { align: "right" });
+
+      doc.setFillColor(Number(statusColor[0]), Number(statusColor[1]), Number(statusColor[2]));
+      const statusWidth = status === "ATENCAO" ? 19 : status === "NO LIMITE" ? 24 : 10;
+      doc.roundedRect(pageWidth - margin - statusWidth, y - 2, statusWidth, 7, 2, 2, "F");
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(6.5);
+      doc.setFont("helvetica", "bold");
+      doc.text(status, pageWidth - margin - statusWidth / 2, y + 2.8, { align: "center" });
+      y += 10;
     });
 
+    if (items.length === 0) {
+      doc.setTextColor(110, 120, 135);
+      doc.setFontSize(9);
+      doc.setFont("helvetica", "normal");
+      doc.text("Nenhum material cadastrado.", margin + 4, y + 4);
+      y += 14;
+    }
+
     if (moves.length) {
-      if (y > 260) {
+      if (y > pageHeight - 82) {
         doc.addPage();
         y = 18;
+      } else {
+        y += 8;
       }
-      y += 3;
-      doc.setFontSize(13);
-      doc.text("ULTIMAS MOVIMENTACOES", margin, y);
-      y += 8;
-      doc.setFontSize(10);
 
-      moves.slice(0, 20).forEach(movement => {
-        if (y > 278) {
+      doc.setTextColor(35, 45, 60);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(12);
+      doc.text("MOVIMENTACOES RECENTES", margin, y);
+      y += 6;
+      doc.setTextColor(110, 120, 135);
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(8.5);
+      doc.text("Ultimos lancamentos registrados no aplicativo.", margin, y);
+      y += 9;
+
+      moves.slice(0, 20).forEach((movement, index) => {
+        if (y > pageHeight - 28) {
           doc.addPage();
           y = 18;
         }
-        doc.text(
-          `${movement.date} - ${movement.name}: ${movement.delta > 0 ? "+" : ""}${movement.delta} unidade(s)`,
-          margin,
-          y
-        );
-        y += 6;
+        const sign = movement.delta > 0 ? "+" : "";
+        const textLine = `${movement.date} • ${movement.name}: ${sign}${movement.delta} unidade(s)`;
+        doc.setTextColor(movement.delta > 0 ? 24 : 210, movement.delta > 0 ? 150 : 70, movement.delta > 0 ? 105 : 80);
+        doc.setFontSize(8);
+        doc.text(textLine.length > 100 ? `${textLine.slice(0, 97)}...` : textLine, margin + 4, y);
+        y += 7;
       });
     }
 
-    const fileName = `relatorio-estoque-${new Date().toISOString().slice(0, 10)}.pdf`;
-    const blob = doc.output("blob");
+    addFooter();
+    return {
+      blob: doc.output("blob"),
+      fileName,
+    };
+  }
+
+  function sendPdfReport() {
+    const { blob, fileName } = buildPdfReport();
     downloadPdfBlob(blob, fileName);
   }
 
@@ -393,57 +516,13 @@ export default function Home() {
   }
 
   async function sharePdfReport() {
-    const doc = new jsPDF();
-    const margin = 14;
-    let y = 18;
-
-    doc.setFontSize(20);
-    doc.text("RELATORIO DE ESTOQUE", margin, y);
-    y += 8;
-    doc.setFontSize(10);
-    doc.text(new Date().toLocaleString("pt-BR"), margin, y);
-    y += 10;
-    doc.setFontSize(12);
-    doc.text(
-      `Materiais: ${items.length} | Total de unidades: ${total} | Abaixo do minimo: ${lowItems.length} | Materiais OK: ${okCount}`,
-      margin,
-      y
-    );
-    y += 10;
-
-    items.forEach((item, index) => {
-      if (y > 278) { doc.addPage(); y = 18; }
-      const status = item.qty < item.min ? "ABAIXO DO MINIMO" : item.qty === item.min ? "NO LIMITE" : "OK";
-      doc.setFontSize(11);
-      doc.text(`${index + 1}. ${item.name}`, margin, y);
-      y += 6;
-      doc.setFontSize(10);
-      doc.text(`Estoque: ${item.qty} unidade(s) | Minimo: ${item.min} unidade(s) | Status: ${status}`, margin + 4, y);
-      y += 7;
-    });
-
-    if (moves.length) {
-      if (y > 260) { doc.addPage(); y = 18; }
-      y += 3;
-      doc.setFontSize(13);
-      doc.text("ULTIMAS MOVIMENTACOES", margin, y);
-      y += 8;
-      doc.setFontSize(10);
-      moves.slice(0, 20).forEach(movement => {
-        if (y > 278) { doc.addPage(); y = 18; }
-        doc.text(`${movement.date} - ${movement.name}: ${movement.delta > 0 ? "+" : ""}${movement.delta} unidade(s)`, margin, y);
-        y += 6;
-      });
-    }
-
-    const fileName = `relatorio-estoque-${new Date().toISOString().slice(0, 10)}.pdf`;
-    const blob = doc.output("blob");
+    const { blob, fileName } = buildPdfReport();
     const file = new File([blob], fileName, { type: "application/pdf" });
 
     if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
       await navigator.share({
-        title: "Relatório de estoque",
-        text: "Relatório do estoque de materiais.",
+        title: "Relatorio de estoque",
+        text: "Relatorio do estoque de materiais.",
         files: [file],
       }).catch(() => {});
     } else {
@@ -879,25 +958,47 @@ export default function Home() {
 
         {showReports && (
           <section className="panel report-panel">
-            <div className="panel-head">
-              <div>
-                <h2>Relatórios de estoque</h2>
-                <p>
-                  Resumo atual do estoque, mínimos configurados e movimentações
-                  recentes.
-                </p>
+            <div className="report-hero">
+              <div className="report-hero-icon"><FileText size={25} /></div>
+              <div className="report-hero-copy">
+                <div className="report-title-line">
+                  <div>
+                    <span className="report-kicker">VISÃO GERAL</span>
+                    <h2>Relatório de estoque</h2>
+                  </div>
+                  <button className="report-close" onClick={() => setShowReports(false)}>Fechar</button>
+                </div>
+                <p>Veja rapidamente o que está disponível, o que está no limite e o que precisa de reposição.</p>
+                <div className="report-meta">
+                  <span><CalendarDays size={14} /> Atualizado agora</span>
+                  <span className={lowItems.length ? "report-alert-badge" : "report-ok-badge"}>
+                    {lowItems.length ? `${lowItems.length} material(is) em atenção` : "Estoque sob controle"}
+                  </span>
+                </div>
               </div>
-              <button onClick={() => setShowReports(false)}>Fechar</button>
             </div>
 
             <div className="report-summary">
-              <div><span>Materiais cadastrados</span><b>{items.length}</b></div>
-              <div><span>Total de unidades</span><b>{total}</b></div>
-              <div>
-                <span>Abaixo do mínimo</span>
-                <b className={lowItems.length ? "danger" : "good"}>{lowItems.length}</b>
+              <div className="report-kpi blue">
+                <div className="report-kpi-icon"><Boxes size={19} /></div>
+                <span>Materiais</span>
+                <b>{items.length}</b>
               </div>
-              <div><span>Materiais OK</span><b className="good">{okCount}</b></div>
+              <div className="report-kpi green">
+                <div className="report-kpi-icon"><Package size={19} /></div>
+                <span>Unidades em estoque</span>
+                <b>{total}</b>
+              </div>
+              <div className="report-kpi red">
+                <div className="report-kpi-icon"><AlertTriangle size={19} /></div>
+                <span>Precisam de atenção</span>
+                <b>{lowItems.length}</b>
+              </div>
+              <div className="report-kpi purple">
+                <div className="report-kpi-icon"><BarChart3 size={19} /></div>
+                <span>Dentro do mínimo</span>
+                <b>{okCount}</b>
+              </div>
             </div>
 
             <div className="report-actions">
@@ -911,20 +1012,53 @@ export default function Home() {
               </div>
             </div>
 
+            <div className="report-section-head">
+              <div>
+                <h3>Situação dos materiais</h3>
+                <p>O indicador mostra quanto do estoque atual cobre o mínimo configurado.</p>
+              </div>
+              <div className="report-legend">
+                <span><i className="legend-dot ok" /> OK</span>
+                <span><i className="legend-dot limit" /> No limite</span>
+                <span><i className="legend-dot low" /> Atenção</span>
+              </div>
+            </div>
+
             <div className="report-list">
-              {items.map(item => (
-                <div className="report-row" key={item.id}>
-                  <span>{item.name}</span>
-                  <b>{item.qty} / {item.min} unidades</b>
-                  <small className={item.qty < item.min ? "danger" : "good"}>
-                    {item.qty < item.min
-                      ? "Abaixo do mínimo"
-                      : item.qty === item.min
-                        ? "No limite"
-                        : "OK"}
-                  </small>
+              {items.map(item => {
+                const coverage = item.min > 0 ? Math.min(100, Math.round((item.qty / item.min) * 100)) : item.qty > 0 ? 100 : 0;
+                const statusClass = item.qty < item.min ? "low" : item.qty === item.min ? "limit" : "ok";
+                const statusLabel = item.qty < item.min ? "Abaixo do mínimo" : item.qty === item.min ? "No limite" : "OK";
+                return (
+                  <div className={`report-row ${statusClass}`} key={item.id}>
+                    <div className="report-material">
+                      <div className="report-material-icon"><Package size={16} /></div>
+                      <div>
+                        <b>{item.name}</b>
+                        <small>{item.code ? `Código: ${item.code}` : "Sem código cadastrado"}</small>
+                      </div>
+                    </div>
+                    <div className="report-quantity">
+                      <b>{item.qty}</b>
+                      <span>de {item.min} mín.</span>
+                    </div>
+                    <div className="report-progress">
+                      <div className="report-progress-track">
+                        <div className={`report-progress-fill ${statusClass}`} style={{ width: `${coverage}%` }} />
+                      </div>
+                      <small>{coverage}% do mínimo</small>
+                    </div>
+                    <span className={`report-status ${statusClass}`}>{statusLabel}</span>
+                  </div>
+                );
+              })}
+              {items.length === 0 && (
+                <div className="report-empty">
+                  <Boxes size={26} />
+                  <b>Nenhum material cadastrado</b>
+                  <span>Adicione materiais para acompanhar a situação do estoque aqui.</span>
                 </div>
-              ))}
+              )}
             </div>
           </section>
         )}
