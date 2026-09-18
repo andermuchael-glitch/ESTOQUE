@@ -93,7 +93,7 @@ export default function Home() {
   } = useOfflineStorage<Move[]>("estoque-moves", []);
 
   const { pendingCount, syncing, lastSync, syncNow } = useOfflineSync();
-
+\n  useEffect(() => {\n    if (!itemsReady) return;\n    setItems(current => current.map(item => ({ ...item, code: item.code || "" })));\n  }, [itemsReady]);\n
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<"all" | "low">("all");
   const [showHistory, setShowHistory] = useState(false);
@@ -186,7 +186,7 @@ export default function Home() {
       const matchesSearch =
         !term ||
         item.name.toLowerCase().includes(term) ||
-        item.code.toLowerCase().includes(term);
+        (item.code || "").toLowerCase().includes(term);
       const matchesFilter = filter === "all" || item.qty < item.min;
       return matchesSearch && matchesFilter;
     });
