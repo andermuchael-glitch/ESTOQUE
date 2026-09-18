@@ -1,7 +1,7 @@
 "use client";
 
 import {useEffect,useMemo,useState} from "react";
-import {PackagePlus,Minus,Plus,Search,History,AlertTriangle,Boxes,Settings,Home,Package,ArrowLeftRight,BarChart3,Menu,X,CalendarDays,Moon,Sun} from "lucide-react";
+import {PackagePlus,Minus,Plus,Search,History,AlertTriangle,Boxes,Settings,Home as HomeIcon,Package,ArrowLeftRight,BarChart3,Menu,X,CalendarDays,Moon,Sun} from "lucide-react";
 
 const INITIAL=["NEOLATEX 3MM","NEOLATEX 2MM BOLSO DE CARTEIRA","MATERIAL DE MOUSE PAD","MOUSE PAD ERGONÔMICO QUADRADO","MOUSE PAD ERGONÔMICO GOTA","APOIO DE TECLADO","CAPA DE MALA","FORRO PRETO IMPERMEÁVEL","MATERIAL MOCHILA IMPERMEÁVEL","MATERIAL ESTEIRA","FORRO MARMITA","FORRO DE COOLER","MATERIAL CANGA","FORRO WINE BAG"];
 
@@ -55,7 +55,7 @@ export default function Home(){
    <aside className={menuOpen?"sidebar open":"sidebar"}>
      <div className="logo"><div className="logo-mark"><Boxes/></div><div><b>ESTOQUE</b><span>CONTROLE DE MATERIAIS</span></div></div>
      <nav>
-       <button className="nav-active" onClick={()=>setMenuOpen(false)}><Home/>Início</button>
+       <button className="nav-active" onClick={()=>setMenuOpen(false)}><HomeIcon/>Início</button>
        <button onClick={()=>setMenuOpen(false)}><Package/>Materiais</button>
        <button onClick={()=>{setShowHistory(true);setMenuOpen(false)}}><ArrowLeftRight/>Movimentações</button>
        <button onClick={()=>setMenuOpen(false)}><BarChart3/>Relatórios</button>
