@@ -11,7 +11,7 @@ type BeforeInstallPromptEvent = Event & {
 export default function PWAInstallPrompt() {
   const [installEvent, setInstallEvent] = useState<BeforeInstallPromptEvent | null>(null);
   const [visible, setVisible] = useState(false);
-  const [ios, setIos] = useState(false);
+  const [ios, setIos] = useState(false);\n  const [dismissed, setDismissed] = useState(false);
 
   useEffect(() => {
     const onBeforeInstall = (event: Event) => {
@@ -44,11 +44,11 @@ export default function PWAInstallPrompt() {
     setInstallEvent(null);
   }
 
-  if (!visible && !ios) return null;
+  if (dismissed || (!visible && !ios)) return null;
 
   return (
     <aside className="pwa-install" aria-live="polite">
-      <button className="pwa-close" onClick={() => setVisible(false)} aria-label="Fechar">
+      <button className="pwa-close" onClick={() => { setVisible(false); setDismissed(true); }} aria-label="Fechar">
         <X size={16} />
       </button>
       <div className="pwa-install-icon"><Download size={19} /></div>
