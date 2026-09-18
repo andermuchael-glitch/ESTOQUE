@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   AlertTriangle,
   ArrowLeftRight,
@@ -108,12 +108,10 @@ export default function Home() {
   const [newQty, setNewQty] = useState("0");
   const [newMin, setNewMin] = useState("1");
 
-  useMemo(() => {
-    if (typeof window === "undefined") return null;
+  useEffect(() => {
     const authenticatedStorage = window.localStorage.getItem("estoque-authenticated") === "true";
     setAuthenticated(authenticatedStorage);
     setAuthReady(true);
-    return null;
   }, []);
 
   async function hashPassword(value: string) {
