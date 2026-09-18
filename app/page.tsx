@@ -84,7 +84,7 @@ export default function Home() {
     value: items,
     setValue: setItems,
     hydrated: itemsReady,
-  } = useOfflineStorage<Item[]>("estoque-items", DEFAULT_ITEMS);
+  } = useOfflineStorage<Item[]>("estoque-items-v3", DEFAULT_ITEMS);
 
   const {
     value: moves,
@@ -230,7 +230,7 @@ export default function Home() {
     if (!item) return;
 
     const value = window.prompt(
-      `Quantidade atual para ${item.name}:`,
+      `Quantidade atual (unidades) para ${item.name}:`,
       String(item.qty)
     );
     if (value === null) return;
@@ -330,7 +330,7 @@ export default function Home() {
 
     doc.setFontSize(12);
     doc.text(
-      `Materiais: ${items.length} | Total de rolos: ${total} | Abaixo do minimo: ${lowItems.length} | Materiais OK: ${okCount}`,
+      `Materiais: ${items.length} | Total de unidades: ${total} | Abaixo do minimo: ${lowItems.length} | Materiais OK: ${okCount}`,
       margin,
       y
     );
@@ -353,7 +353,7 @@ export default function Home() {
       y += 6;
       doc.setFontSize(10);
       doc.text(
-        `Estoque: ${item.qty} rolo(s) | Minimo: ${item.min} | Status: ${status}`,
+        `Estoque: ${item.qty} unidade(s) | Minimo: ${item.min} unidade(s) | Status: ${status}`,
         margin + 4,
         y
       );
@@ -377,7 +377,7 @@ export default function Home() {
           y = 18;
         }
         doc.text(
-          `${movement.date} - ${movement.name}: ${movement.delta > 0 ? "+" : ""}${movement.delta} rolo(s)`,
+          `${movement.date} - ${movement.name}: ${movement.delta > 0 ? "+" : ""}${movement.delta} unidade(s)`,
           margin,
           y
         );
@@ -478,7 +478,7 @@ export default function Home() {
         <section className="login-card">
           <div className="login-logo"><Boxes size={30} /></div>
           <h1>ESTOQUE</h1>
-          <p>Controle de materiais em rolos</p>
+          <p>Controle de materiais por unidades</p>
 
           <form onSubmit={handleAuth}>
             <label>
@@ -602,7 +602,7 @@ export default function Home() {
           <div>
             <h1>Bem-vindo!</h1>
             <p>
-              Controle seu estoque de materiais em rolos de forma simples,
+              Controle seu estoque de materiais por unidades de forma simples,
               rápida e offline.
             </p>
           </div>
@@ -711,11 +711,11 @@ export default function Home() {
         )}
 
         {showAddMaterial && (
-          <section className="panel add-material-panel">
+          <section className="panel add-material-panel add-material-modal">
             <div className="panel-head">
               <div>
                 <h2>Novo material</h2>
-                <p>Cadastre nome, código e quantidade inicial.</p>
+                <p>Cadastre nome, código e quantidade inicial em unidades.</p>
               </div>
               <button onClick={() => setShowAddMaterial(false)}>Fechar</button>
             </div>
@@ -741,7 +741,7 @@ export default function Home() {
               </label>
 
               <label>
-                Estoque inicial
+                Unidades iniciais
                 <input
                   type="number"
                   min="0"
@@ -751,7 +751,7 @@ export default function Home() {
               </label>
 
               <label>
-                Estoque mínimo
+                Mínimo de unidades
                 <input
                   type="number"
                   min="0"
@@ -773,7 +773,7 @@ export default function Home() {
               <div>
                 <h2>Configurações e backup</h2>
                 <p>
-                  Defina mínimos, códigos e proteja seus dados antes de trocar
+                  Defina mínimos em unidades, códigos e proteja seus dados antes de trocar
                   de aparelho.
                 </p>
               </div>
@@ -815,7 +815,7 @@ export default function Home() {
                 </div>
                 <div className="setting-fields">
                   <label>
-                    Mín.
+                    Mín. unidades
                     <input
                       type="number"
                       min="0"
@@ -902,7 +902,7 @@ export default function Home() {
                   <span>{movement.name}</span>
                   <b className={movement.delta > 0 ? "in" : "out"}>
                     {movement.delta > 0 ? "+" : ""}
-                    {movement.delta} rolo{Math.abs(movement.delta) !== 1 ? "s" : ""}
+                    {movement.delta} unidade{Math.abs(movement.delta) !== 1 ? "s" : ""}
                   </b>
                   <small>{movement.date}</small>
                 </div>
