@@ -17,3 +17,12 @@
 .add-material-modal{border-color:#2f6fcb;box-shadow:0 18px 55px #0008}.add-material-modal .panel-head{margin-bottom:4px}.add-material-panel{animation:estoquePanelIn .16s ease-out}@keyframes estoquePanelIn{from{opacity:0;transform:translateY(-5px)}to{opacity:1;transform:translateY(0)}}.empty{min-height:160px;border:1px dashed #26364b;border-radius:13px;background:#080f18;display:grid;place-items:center;align-content:center;gap:8px}.empty b{color:#d5deea;font-size:13px}.empty span{font-size:10px;color:#6f7e92}
 
 .report-actions-buttons{display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap}.secondary-report{background:#111b2a!important;border-color:#2a3c55!important;color:#d5deea!important}@media(max-width:700px){.report-actions-buttons{display:grid;grid-template-columns:1fr}.report-actions-buttons button{width:100%}}
+
+.material-icon{overflow:hidden}
+.material-icon img{width:100%;height:100%;object-fit:cover;display:block}
+.material-image-field{grid-column:span 2}
+.image-upload{position:relative;min-height:76px;border:1px dashed #34506f;border-radius:11px;background:#080f18;display:flex;align-items:center;justify-content:center;gap:8px;color:#7f91a8;overflow:hidden;cursor:pointer}
+.image-upload img{width:76px;height:76px;object-fit:cover;border-radius:9px}
+.image-upload input{position:absolute;inset:0!important;width:100%!important;height:100%!important;opacity:0;cursor:pointer}
+.image-upload>span{font-size:10px;color:#9eacc0}
+@media(max-width:1100px){.material-image-field{grid-column:1/-1}}
