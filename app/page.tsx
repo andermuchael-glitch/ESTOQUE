@@ -10,6 +10,7 @@ import {
   Camera,
   CloudOff,
   FileText,
+  Image as ImageIcon,
   Home as HomeIcon,
   Menu,
   Minus,
@@ -39,6 +40,7 @@ type Item = {
   qty: number;
   min: number;
   code: string;
+  image?: string;
 };
 
 type Move = {
@@ -97,6 +99,7 @@ export default function Home() {
   const [newCode, setNewCode] = useState("");
   const [newQty, setNewQty] = useState("0");
   const [newMin, setNewMin] = useState("1");
+  const [newImage, setNewImage] = useState("");
 
   useEffect(() => {
     const authenticatedStorage = window.localStorage.getItem("estoque-authenticated") === "true";
@@ -268,6 +271,48 @@ export default function Home() {
     );
   }
 
+  async function handleMaterialImage(file: File | undefined) {
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      window.alert("Selecione uma imagem válida.");
+      return;
+    }
+
+    try {
+      const dataUrl = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(String(reader.result));
+        reader.onerror = () => reject(new Error("Falha ao ler imagem"));
+        reader.readAsDataURL(file);
+      });
+
+      const image = await new Promise<string>((resolve, reject) => {
+        const img = new Image();
+        img.onload = () => {
+          const maxSize = 900;
+          const ratio = Math.min(1, maxSize / Math.max(img.width, img.height));
+          const canvas = document.createElement("canvas");
+          canvas.width = Math.max(1, Math.round(img.width * ratio));
+          canvas.height = Math.max(1, Math.round(img.height * ratio));
+          const ctx = canvas.getContext("2d");
+          if (!ctx) {
+            reject(new Error("Canvas indisponível"));
+            return;
+          }
+          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+          resolve(canvas.toDataURL("image/jpeg", 0.78));
+        };
+        img.onerror = () => reject(new Error("Imagem inválida"));
+        img.src = dataUrl;
+      });
+
+      setNewImage(image);
+    } catch {
+      window.alert("Não foi possível carregar esta imagem.");
+    }
+  }
+
   function addMaterial(e: React.FormEvent) {
     e.preventDefault();
     const name = newName.trim().toUpperCase();
@@ -279,6 +324,7 @@ export default function Home() {
       code: newCode.trim(),
       qty: Math.max(0, Number(newQty) || 0),
       min: Math.max(0, Number(newMin) || 0),
+      image: newImage,
     };
 
     setItems(current => [...current, item]);
@@ -288,6 +334,7 @@ export default function Home() {
     setNewCode("");
     setNewQty("0");
     setNewMin("1");
+    setNewImage("");
     setShowAddMaterial(false);
   }
 
@@ -648,6 +695,7 @@ export default function Home() {
             qty: Math.max(0, Number(item.qty) || 0),
             min: Math.max(0, Number(item.min) || 0),
             code: typeof item.code === "string" ? item.code : "",
+            image: typeof item.image === "string" ? item.image : "",
           }));
 
         if (!restored.length) throw new Error("Backup sem materiais");
@@ -922,7 +970,7 @@ export default function Home() {
                   required
                   value={newName}
                   onChange={e => setNewName(e.target.value)}
-                  placeholder="Ex.: NEOLATEX 4MM"
+                  placeholder="Nome do material"
                 />
               </label>
 
@@ -953,6 +1001,23 @@ export default function Home() {
                   value={newMin}
                   onChange={e => setNewMin(e.target.value)}
                 />
+              </label>
+
+              <label className="material-image-field">
+                Imagem do material
+                <span className="image-upload">
+                  {newImage ? (
+                    <img src={newImage} alt="Prévia do material" />
+                  ) : (
+                    <ImageIcon size={20} />
+                  )}
+                  <span>{newImage ? "Trocar imagem" : "Adicionar imagem"}</span>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={e => void handleMaterialImage(e.target.files?.[0])}
+                  />
+                </span>
               </label>
 
               <button className="add-material-submit" type="submit">
@@ -1173,7 +1238,9 @@ export default function Home() {
               key={item.id}
             >
               <div className="cardtop">
-                <div className="material-icon"><PackagePlus size={21} /></div>
+                <div className="material-icon">
+                  {item.image ? <img src={item.image} alt={item.name} /> : <PackagePlus size={21} />}
+                </div>
                 <div className="card-name">
                   <h3>{item.name}</h3>
                   <small className={item.qty < item.min ? "danger" : "good"}>
