@@ -4,8 +4,8 @@ const withSerwistInit = require("@serwist/next").default;
 const nextConfig = {
   output: "export",
   trailingSlash: true,
-  basePath: "/ESTOQUE",
-  assetPrefix: "/ESTOQUE/",
+  basePath: process.env.CAPACITOR_BUILD === "true" ? "" : "/ESTOQUE",
+  assetPrefix: process.env.CAPACITOR_BUILD === "true" ? "" : "/ESTOQUE/",
   images: { unoptimized: true },
 };
 
@@ -14,11 +14,11 @@ const withSerwist = withSerwistInit({
   swSrc: "app/sw.ts",
   swDest: "public/sw.js",
   swUrl: "/sw.js",
-  scope: "/ESTOQUE/",
+  scope: process.env.CAPACITOR_BUILD === "true" ? "/" : "/ESTOQUE/",
   register: false,
   cacheOnNavigation: true,
   reloadOnOnline: false,
-  additionalPrecacheEntries: [
+  additionalPrecacheEntries: process.env.CAPACITOR_BUILD === "true" ? [] : [
     {
       url: "/ESTOQUE/",
       revision: process.env.GITHUB_SHA || "local-build",
