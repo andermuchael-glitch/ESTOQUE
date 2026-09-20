@@ -498,8 +498,52 @@ export default function Home() {
     };
   }
 
-  function sendPdfReport() {
+  async function isNativeAndroid() {
+    try {
+      const { Capacitor } = await import("@capacitor/core");
+      return Capacitor.getPlatform() === "android";
+    } catch {
+      return false;
+    }
+  }
+
+  async function blobToBase64(blob: Blob) {
+    const buffer = await blob.arrayBuffer();
+    const bytes = new Uint8Array(buffer);
+    let binary = "";
+    const chunkSize = 0x8000;
+
+    for (let i = 0; i < bytes.length; i += chunkSize) {
+      binary += String.fromCharCode(...bytes.subarray(i, i + chunkSize));
+    }
+
+    return btoa(binary);
+  }
+
+  async function sendPdfReport() {
     const { blob, fileName } = buildPdfReport();
+
+    if (await isNativeAndroid()) {
+      try {
+        const { Filesystem, Directory } = await import("@capacitor/filesystem");
+        const data = await blobToBase64(blob);
+
+        await Filesystem.writeFile({
+          path: "ESTOQUE/" + fileName,
+          data,
+          directory: Directory.Documents,
+          recursive: true,
+        });
+
+        window.alert("PDF salvo em Documentos/ESTOQUE:\n" + fileName);
+        return;
+      } catch (error) {
+        console.error("Falha ao salvar PDF no Android:", error);
+        window.alert("Não foi possível salvar o PDF no aparelho. Tente novamente.");
+        return;
+      }
+    }
+
     downloadPdfBlob(blob, fileName);
   }
 
@@ -517,6 +561,38 @@ export default function Home() {
 
   async function sharePdfReport() {
     const { blob, fileName } = buildPdfReport();
+
+    if (await isNativeAndroid()) {
+      try {
+        const { Filesystem, Directory } = await import("@capacitor/filesystem");
+        const { Share } = await import("@capacitor/share");
+        const data = await blobToBase64(blob);
+
+        await Filesystem.writeFile({
+          path: fileName,
+          data,
+          directory: Directory.Cache,
+        });
+
+        const { uri } = await Filesystem.getUri({
+          path: fileName,
+          directory: Directory.Cache,
+        });
+
+        await Share.share({
+          title: "Relatório de estoque",
+          text: "Relatório do estoque de materiais.",
+          files: [uri],
+          dialogTitle: "Compartilhar relatório",
+        });
+        return;
+      } catch (error) {
+        console.error("Falha ao compartilhar PDF no Android:", error);
+        window.alert("Não foi possível abrir o compartilhamento do PDF.");
+        return;
+      }
+    }
+
     const file = new File([blob], fileName, { type: "application/pdf" });
 
     if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
