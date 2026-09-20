@@ -3,6 +3,8 @@ import type { ReactNode } from "react";
 import "./globals.css";
 import PWARegister from "../components/PWARegister";
 
+const publicPrefix = process.env.CAPACITOR_BUILD === "true" ? "" : "/ESTOQUE";
+
 export const metadata: Metadata = {
   applicationName: "Controle de Estoque",
   title: {
@@ -10,13 +12,13 @@ export const metadata: Metadata = {
     template: "%s | ESTOQUE",
   },
   description: "Controle offline de materiais e movimentações de estoque.",
-  manifest: "/ESTOQUE/manifest.webmanifest",
+  manifest: `${publicPrefix}/manifest.webmanifest`,
   icons: {
     icon: [
-      { url: "/ESTOQUE/icons/icon-192.svg", type: "image/svg+xml", sizes: "192x192" },
-      { url: "/ESTOQUE/icons/icon-512.svg", type: "image/svg+xml", sizes: "512x512" },
+      { url: `${publicPrefix}/icons/icon-192.svg`, type: "image/svg+xml", sizes: "192x192" },
+      { url: `${publicPrefix}/icons/icon-512.svg`, type: "image/svg+xml", sizes: "512x512" },
     ],
-    apple: "/ESTOQUE/icons/icon-192.svg",
+    apple: `${publicPrefix}/icons/icon-192.svg`,
   },
   appleWebApp: {
     capable: true,
