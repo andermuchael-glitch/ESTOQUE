@@ -18,6 +18,26 @@ export default function BarcodeScanner({ onDetected, onClose }: Props) {
 
     const start = async () => {
       try {
+        const { Capacitor } = await import("@capacitor/core");
+
+        if (Capacitor.getPlatform() === "android") {
+          const { CapacitorBarcodeScanner } = await import("capacitor-barcode-scanner");
+          setStarting(false);
+
+          const result = await CapacitorBarcodeScanner.scan();
+
+          if (!mounted) return;
+
+          if (result?.result && result.code?.trim()) {
+            onDetected(result.code.trim());
+            onClose();
+          } else if (mounted) {
+            setError("Nenhum código foi lido.");
+          }
+
+          return;
+        }
+
         const { Html5Qrcode } = await import("html5-qrcode");
         if (!mounted) return;
 
@@ -43,10 +63,11 @@ export default function BarcodeScanner({ onDetected, onClose }: Props) {
         );
 
         if (mounted) setStarting(false);
-      } catch {
+      } catch (err) {
+        console.error("Falha no leitor de código:", err);
         if (mounted) {
           setStarting(false);
-          setError("Não foi possível abrir a câmera. Verifique a permissão do navegador.");
+          setError("Não foi possível abrir o leitor. Verifique a permissão da câmera e tente novamente.");
         }
       }
     };
@@ -75,10 +96,15 @@ export default function BarcodeScanner({ onDetected, onClose }: Props) {
       </div>
       <div className="scanner-box">
         <div id="estoque-barcode-reader" />
-        {starting && <div className="scanner-message"><Camera size={18} /> Abrindo câmera…</div>}
-        {error && <div className="scanner-error">{error}</div>}
+        {starting && <div className="scanner-message"><Camera size={18} /> Abrindo leitor…</div>}
+        {error && (
+          <div className="scanner-error">
+            <Camera size={18} />
+            <span>{error}</span>
+          </div>
+        )}
       </div>
-      <small className="scanner-note">A leitura é feita localmente no dispositivo; nenhum código é enviado pelo leitor.</small>
+      <small className="scanner-note">No Android, a leitura usa o scanner nativo; no navegador, usa a câmera do dispositivo.</small>
     </section>
   );
 }
