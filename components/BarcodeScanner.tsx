@@ -10,10 +10,21 @@ type Props = {
 
 export default function BarcodeScanner({ onDetected, onClose }: Props) {
   const scannerRef = useRef<any>(null);
+  const startedRef = useRef(false);
+  const detectedRef = useRef(onDetected);
+  const closeRef = useRef(onClose);
   const [error, setError] = useState("");
   const [starting, setStarting] = useState(true);
 
   useEffect(() => {
+    detectedRef.current = onDetected;
+    closeRef.current = onClose;
+  }, [onDetected, onClose]);
+
+  useEffect(() => {
+    if (startedRef.current) return;
+    startedRef.current = true;
+
     let mounted = true;
 
     const start = async () => {
@@ -29,8 +40,8 @@ export default function BarcodeScanner({ onDetected, onClose }: Props) {
           if (!mounted) return;
 
           if (result?.result && result.code?.trim()) {
-            onDetected(result.code.trim());
-            onClose();
+            detectedRef.current(result.code.trim());
+            closeRef.current();
           } else if (mounted) {
             setError("Nenhum código foi lido.");
           }
@@ -52,12 +63,12 @@ export default function BarcodeScanner({ onDetected, onClose }: Props) {
             aspectRatio: 1.777,
           },
           async (decodedText: string) => {
-            onDetected(decodedText.trim());
+            detectedRef.current(decodedText.trim());
             try {
               await scanner.stop();
             } catch {}
             scanner.clear();
-            onClose();
+            closeRef.current();
           },
           () => {}
         );
@@ -83,7 +94,7 @@ export default function BarcodeScanner({ onDetected, onClose }: Props) {
         });
       }
     };
-  }, [onClose, onDetected]);
+  }, []);
 
   return (
     <section className="scanner-panel panel">
