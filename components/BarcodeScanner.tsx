@@ -15,6 +15,7 @@ export default function BarcodeScanner({ onDetected, onClose }: Props) {
   const closeRef = useRef(onClose);
   const [error, setError] = useState("");
   const [starting, setStarting] = useState(true);
+  const [manualCode, setManualCode] = useState("");
 
   useEffect(() => {
     detectedRef.current = onDetected;
@@ -96,6 +97,16 @@ export default function BarcodeScanner({ onDetected, onClose }: Props) {
     };
   }, []);
 
+  function submitManualCode() {
+    const code = manualCode.trim();
+    if (!code) {
+      setError("Digite um código para continuar.");
+      return;
+    }
+    detectedRef.current(code);
+    closeRef.current();
+  }
+
   return (
     <section className="scanner-panel panel">
       <div className="panel-head">
@@ -115,7 +126,25 @@ export default function BarcodeScanner({ onDetected, onClose }: Props) {
           </div>
         )}
       </div>
-      <small className="scanner-note">No Android, a leitura usa o scanner nativo; no navegador, usa a câmera do dispositivo.</small>
+      <div className="scanner-manual">
+        <div className="scanner-manual-title">
+          <b>Não conseguiu ler?</b>
+          <span>Digite o código manualmente para continuar o cadastro.</span>
+        </div>
+        <div className="scanner-manual-row">
+          <input
+            value={manualCode}
+            onChange={e => setManualCode(e.target.value)}
+            onKeyDown={e => {
+              if (e.key === "Enter") submitManualCode();
+            }}
+            placeholder="Digite o código de barras ou QR"
+            inputMode="numeric"
+          />
+          <button type="button" onClick={submitManualCode}>Continuar</button>
+        </div>
+      </div>
+      <small className="scanner-note">Se a câmera não funcionar, você pode informar o código manualmente. No Android, a leitura usa o scanner nativo; no navegador, usa a câmera do dispositivo.</small>
     </section>
   );
 }
