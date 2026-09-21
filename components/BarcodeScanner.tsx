@@ -33,10 +33,10 @@ export default function BarcodeScanner({ onDetected, onClose }: Props) {
         const { Capacitor } = await import("@capacitor/core");
 
         if (Capacitor.getPlatform() === "android") {
-          const { CapacitorBarcodeScanner } = await import("capacitor-barcode-scanner");
+          const { BarcodeScanner } = await import("capacitor-barcode-scanner");
           setStarting(false);
 
-          const result = await CapacitorBarcodeScanner.scan();
+          const result = await BarcodeScanner.scan();
 
           if (!mounted) return;
 
